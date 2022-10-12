@@ -1,43 +1,54 @@
 <html>
 <head>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,300" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css">
+	<script
+		src="https://code.jquery.com/jquery-3.1.1.min.js"
+		integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+		crossorigin="anonymous"></script>
+	<script src="semantic/dist/semantic.min.js"></script>
+
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
 	<meta content="utf-8" http-equiv="encoding" />
-	<meta name="copyright" content="&copy; 2020 Steve Seguin" />
+	<meta name="copyright" content="&copy; 2022 HueVirtualCreature" />
 	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
+	
 	<!-- Primary Meta Tags -->
 	<title>Caption Overlay Window</title>
-	<meta name="title" content="CAPTION.Ninja: Overlay" />
-	<meta name="description" content="This is a free-to-use captioning tool for OBS. Speech-to-text is done using Machine Learning" />
-	<meta name="author" content="Steve Seguin" />
-	
+	<meta name="title" content="CAPTION.Ninja: Speaketh" />
+	<meta name="description" content="This is a modification of Steve Seguin's Caption Ninja. It is the overlay, except it talks." />
+	<meta name="author" content="HueVirtualCreature" />
+
 	<style>
 		@font-face {
 		  font-family: 'Cousine';
 		  src: url('fonts/Cousine-Bold.ttf') format('truetype');
 		}
-	
-		body {
-			margin:0;
-			padding:0 10px;
-			height:100%;
-			border: 0;
-			display: flex;
-			flex-direction: column-reverse;
-			position:absolute;
-			bottom:0;
-			overflow:hidden;
+
+		.noselect {
+			-webkit-touch-callout: none; /* iOS Safari */
+			-webkit-user-select: none; /* Safari */
+			-khtml-user-select: none; /* Konqueror HTML */
+			-moz-user-select: none; /* Old versions of Firefox */
+			-ms-user-select: none; /* Internet Explorer/Edge */
+			user-select: none; /* Non-prefixed version, currently
+								supported by Chrome, Edge, Opera and Firefox */
 		}
-	
+
+		body {
+			overflow: hidden;
+			font-family: "Open Sans", sans-serif;
+		}
+		
 		.output {
 			margin:0;
-			background-color: #0000;
+			background-color: rgb(0, 0, 0);
 			color: white;
 			font-family: Cousine, monospace;
 			font-size: 3.2em;
 			line-height: 1.1em;
 			letter-spacing: 0.0em;
-			
 			padding: 0em;
 			text-shadow: 0.05em 0.05em 0px rgba(0,0,0,1);
 		}
@@ -55,12 +66,90 @@
 	</style>
 </head>
 <body>
+	<div class="ui fluid container grid stackable noselect">
+		<div class="row" translate="no" >
+			<div class="sixteen wide column">
+				<div class="ui top attached menu">
+					<h1 class="ui header">
+						<i class="volume up icon"></i>
+						<div class="content">
+							CAPTION.Ninja: Speaketh
+							<div class="sub header">CAPTION.Ninja Receiver and Voice Synth - By HueVirtualCreature</div>
+						</div>
+					</h1>
+				</div>
+				<div class="ui top attached menu">
+					<div class="item">
+						<div class="ui icon input">
+						  <input id="rateSelect" type="number" placeholder="Rate" value="1" min="0.1" max="10">
+						</div>
+					</div>
+					<div class="item">
+						<div class="ui icon input">
+						  <input id="pitchSelect" type="number" placeholder="Pitch" value="1" min="0" max="2">
+						</div>
+					</div>
+					<div class="ui selection dropdown item">
+						<input type="hidden" id="voiceSelect">
+						<i class="dropdown icon"></i>
+						<div class="default text">Voice Option</div>
+						<div class="menu" id="voiceOptions"></div>
+					</div>
+					<div class="item">
+						<input id="volumeRange" type="range" min="0" max="1" value="0.5" step="any"/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="interm" class="output"></div>
+		<div id="output" class="output">Test output caption</div>
+	</div>
 	
-	<div id="interm" class="output"></div>
-	<div id="output" class="output"></div>
 	<script>
+	const VOICE_STORE = [];
+	var SPEECHSYNTH = null;
+
+	function loadVoiceOptionsSelect() {
+		let voices = getVoiceOptionsFromSpeechWebKit();
+
+		let voiceSelect = $("#voiceOptions");
+		voices.forEach(v => {
+			VOICE_STORE.push(v);
+			let voiceName = v.name;
+			voiceSelect.append($('<div></div>').addClass("item").attr("value", voiceName).html(voiceName));
+		});
+	}
+
+	function getVoiceOptionsFromSpeechWebKit() {
+		if (!window.speechSynthesis) return [];
+		let voices = window.speechSynthesis.getVoices();
+		return voices;
+	}
+
+	function getCurrentVoiceSelection() {
+		let selectedVoiceName = $('#voiceSelect').val();
+		return VOICE_STORE.find(v => v.name.toLowerCase() === selectedVoiceName.toLowerCase()) || VOICE_STORE[0];
+	}
+
+	function setUpVolumeRange() {
+
+	}
+
+	function getVolume() {
+		return $("#volumeRange").val() || 0.5;
+	}
+
+	function getPitch() {
+		return $("#pitchSelect").val() || 1;
+	}
 	
+	function getRate() {
+		return $("#rateSelect").val() || 1;
+	}
+
+	//???
 	(function (w) {
+		//Get URL Params
 		w.URLSearchParams = w.URLSearchParams || function (searchString) {
 			var self = this;
 			self.searchString = searchString;
@@ -75,19 +164,19 @@
 			};
 		};
 
+		loadVoiceOptionsSelect();
+		SPEECHSYNTH = window.speechSynthesis;
+		$('.ui.dropdown').dropdown();
 	})(window);
+
 	var urlParams = new URLSearchParams(window.location.search);
-	
-	
-	
+
 	var roomID = "test";
 	
 	if (urlParams.has("room")){
 		roomID = urlParams.get("room");
 	} else if (urlParams.has("ROOM")){
 		roomID = urlParams.get("ROOM");
-	} else {
-		window.location.href = "./speechin";
 	}
 	
 	var clearOnNew = false;
@@ -108,7 +197,6 @@
 		var apiKey = urlParams.get("pie") || "0khtlN7R7ISHZzFiyfK49Q9zAm93Wti5xpbW9qjg";  // get an API key from https://www.piesocket.com/ for a free API server of your own
 		socket = new WebSocket("wss://free3.piesocket.com/v3/"+roomID+"?api_key="+apiKey);
 	} 
-	
 		
 	socket.onclose = function (){
 		setTimeout(function(){window.location.reload(true);},100);
@@ -133,6 +221,7 @@
 		return temp.trim();
 	};
 	
+	//Fires when a message from the Captioner is recieved
 	socket.addEventListener('message', function (event) {
 		if (event.data){
 			var data = JSON.parse(event.data);
@@ -154,30 +243,19 @@
 			console.log(label);
 			console.log(data);
 		
-			if ("interm" in data){
-				document.getElementById("interm").innerHTML = label+"<span>"+sanitize(data.interm)+"</span><br/>";
-			} else if ("final" in data){
-				if (clearOnNew){
-					let synth = window.speechSynthesis;
-					voice = window.speechSynthesis.getVoices()[0];
-					const utterThis = new SpeechSynthesisUtterance(data.final);
-					utterThis.voice = voice;
-					utterThis.pitch = 25;
-					utterThis.rate = 1;
-					synth.speak(utterThis);
-					document.getElementById("output").innerHTML = label+"<span>"+sanitize(data.final)+"</span><br/>";
-				} else {
-					let synth = window.speechSynthesis;
-					voice = window.speechSynthesis.getVoices()[0];
-					const utterThis = new SpeechSynthesisUtterance(data.final);
-					utterThis.voice = voice;
-					utterThis.pitch = 25;
-					utterThis.rate = 1;
-					synth.speak(utterThis);
-					document.getElementById("output").innerHTML += label+"<span>"+sanitize(data.final)+"</span><br/>";
-				} 
+			if ("interm" in data){ document.getElementById("interm").innerHTML = label+"<span>"+sanitize(data.interm)+"</span><br/>"; } 
+			else if ("final" in data) {
+				let selectedVoice = getCurrentVoiceSelection();
+				const utterThis = new SpeechSynthesisUtterance(data.final);
+				utterThis.voice = selectedVoice;
+				utterThis.pitch = getPitch();
+				utterThis.rate = getRate();
+				utterThis.volume = getVolume();
+				SPEECHSYNTH.speak(utterThis);
+
+				if (clearOnNew) { document.getElementById("output").innerHTML = label+"<span>"+sanitize(data.final)+"</span><br/>"; } 
+				else { document.getElementById("output").innerHTML += label+"<span>"+sanitize(data.final)+"</span><br/>"; } 
 				document.getElementById("interm").innerHTML="";
-				
 			}
 			
 			if (!clearOnNew){
