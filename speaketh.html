@@ -166,6 +166,8 @@
 	(async () => {   
 		console.debug(`Getting audio devices`);
 		let devices = await navigator.mediaDevices.enumerateDevices()  
+		console.debug(`Found ${devices.length} audio device(s)`);
+		
 		let options = document.getElementById("audioOutSelect");
 		// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
 		devices.forEach(device => {
