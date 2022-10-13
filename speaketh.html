@@ -167,9 +167,21 @@
 		console.debug(`Getting audio devices`);
 		let devices = await navigator.mediaDevices.enumerateDevices()  
 		console.debug(`Found ${devices.length} audio device(s)`);
-		
+
+		if (!devices || devices.length < 1) {
+			console.debug(`No audio devices found. Trying something else`);
+			navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(stream => { stream.getTracks().forEach(t=>t.stop()); debugger;});
+		}
+
+		if (devices && devices.length > 0) {
+			loadAudioDevicesIntoSelect(devices);
+		}
+	})();
+
+	function loadAudioDevicesIntoSelect(devices) {
+		console.debug(`Loading ${devices.length} option(s) into audio select`);
+
 		let options = document.getElementById("audioOutSelect");
-		// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
 		devices.forEach(device => {
 			if (device.kind === "audiooutput") {
 				let newOption = document.createElement("option");
@@ -177,8 +189,8 @@
 				newOption.innerHTML = device.label;
 				options.appendChild(newOption);
 			}
-		}) 
-	})();
+		});
+	};
 
 	//???
 	(function (w) {
