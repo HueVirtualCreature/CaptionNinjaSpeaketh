@@ -80,20 +80,22 @@
 				</div>
 				<div class="ui top attached menu">
 					<div class="item">
-						<div class="ui icon input">
+						<div class="ui small input">
 						  <input id="rateSelect" type="number" placeholder="Rate" value="1" min="0.1" max="10">
 						</div>
 					</div>
 					<div class="item">
-						<div class="ui icon input">
+						<div class="ui small input">
 						  <input id="pitchSelect" type="number" placeholder="Pitch" value="1" min="0" max="2">
 						</div>
 					</div>
-					<div class="ui selection dropdown item">
-						<input type="hidden" id="voiceSelect">
-						<i class="dropdown icon"></i>
-						<div class="default text">Voice Option</div>
-						<div class="menu" id="voiceOptions"></div>
+					<div class="item">
+						<select class="ui dropdown" id="voiceSelect"></select>
+					</div>
+					<div class="item">
+						<select class="ui dropdown" id="audioOutSelect">
+							<option value="default">Please Select an Audio Output Device</option>
+						</select>
 					</div>
 					<div class="item">
 						<input id="volumeRange" type="range" min="0" max="1" value="0.5" step="any"/>
@@ -112,11 +114,18 @@
 	function loadVoiceOptionsSelect() {
 		let voices = getVoiceOptionsFromSpeechWebKit();
 
-		let voiceSelect = $("#voiceOptions");
+		// let voiceSelect = $("#voiceOptions");
+
 		voices.forEach(v => {
+			let options = document.getElementById("voiceSelect");
 			VOICE_STORE.push(v);
 			let voiceName = v.name;
-			voiceSelect.append($('<div></div>').addClass("item").attr("value", voiceName).html(voiceName));
+			// voiceSelect.append($('<option></option>').addClass("item").attr("value", voiceName).html(voiceName));
+
+			let newOption = document.createElement("option");
+			newOption.setAttribute("value", voiceName);
+			newOption.innerHTML = voiceName;
+			options.appendChild(newOption);
 		});
 	}
 
@@ -147,6 +156,22 @@
 		return $("#rateSelect").val() || 1;
 	}
 
+	//Audio Devices
+	// (async () => {   
+	// 	let devices = await navigator.mediaDevices.enumerateDevices()  
+	// 	// await navigator.permissions.request( { name: "camera" } ); 
+	// 	let options = document.getElementById("audioOutSelect");
+	// 	// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+	// 	devices.forEach(device => {
+	// 		if (device.kind === "audiooutput") {
+	// 			let newOption = document.createElement("option");
+	// 			newOption.setAttribute("value", device.deviceId);
+	// 			newOption.innerHTML = device.label;
+	// 			options.appendChild(newOption);
+	// 		}
+	// 	}) 
+	// })();
+
 	//???
 	(function (w) {
 		//Get URL Params
@@ -164,9 +189,7 @@
 			};
 		};
 
-		loadVoiceOptionsSelect();
 		SPEECHSYNTH = window.speechSynthesis;
-		$('.ui.dropdown').dropdown();
 	})(window);
 
 	var urlParams = new URLSearchParams(window.location.search);
@@ -274,6 +297,8 @@
 		setTimeout(function(){window.location.reload(true);},100);
 	};
 	
+	loadVoiceOptionsSelect();
+
 	</script>
 	</body>
 </html>
