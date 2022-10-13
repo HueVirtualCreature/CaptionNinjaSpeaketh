@@ -115,6 +115,7 @@
 
 	function loadVoiceOptionsSelect() {
 		let voices = getVoiceOptionsFromSpeechWebKit();
+		console.debug(`Loading ${voices.length} options into Voice Select`);
 
 		voices.forEach(v => {
 			let options = document.getElementById("voiceSelect");
@@ -129,30 +130,41 @@
 	}
 
 	function getVoiceOptionsFromSpeechWebKit() {
+		console.debug(`Looking for voices from SpeechWebKit`);
 		if (!window.speechSynthesis) return [];
 		let voices = window.speechSynthesis.getVoices();
+		console.debug(`SpeechWebKit found ${voices.length} voice(s)`);
 		return voices;
 	}
 
 	function getCurrentVoiceSelection() {
 		let selectedVoiceName = $('#voiceSelect').val();
+		console.debug(`Getting selected voice: ${selectedVoiceName}`);
 		return VOICE_STORE.find(v => v.name.toLowerCase() === selectedVoiceName.toLowerCase()) || VOICE_STORE[0];
 	}
 
 	function getVolume() {
+		console.debug(`Getting volume`);
 		return $("#volumeRange").val() || 0.5;
 	}
 
 	function getPitch() {
+		console.debug(`Getting pitch`);
 		return $("#pitchSelect").val() || 1;
 	}
 	
 	function getRate() {
+		console.debug(`Getting rate`);
 		return $("#rateSelect").val() || 1;
 	}
 
+	/*
+	function refreshDeviceList() { navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(stream => { stream.getTracks().forEach(t=>t.stop()); fillDeviceList() }) }
+	*/
+
 	//Audio Devices
 	(async () => {   
+		console.debug(`Getting audio devices`);
 		let devices = await navigator.mediaDevices.enumerateDevices()  
 		let options = document.getElementById("audioOutSelect");
 		// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
@@ -214,10 +226,12 @@
 	} 
 		
 	socket.onclose = function (){
+		console.debug(`Connection to ${roomID} has been closed`);
 		setTimeout(function(){window.location.reload(true);},100);
 	};
 	
 	socket.onopen = function (){
+		console.debug(`Joining room ${roomID}`);
 		socket.send(JSON.stringify({"join":roomID}));
 	}
 	
@@ -238,6 +252,7 @@
 	
 	//Fires when a message from the Captioner is recieved
 	socket.addEventListener('message', function (event) {
+		console.debug(`Received message from ${roomID}`, event);
 		if (event.data){
 			var data = JSON.parse(event.data);
 			
@@ -286,12 +301,16 @@
 	});
 	
 	socket.onclose = function (){
+		console.debug(`Connection to ${roomID} has been closed`);
 		setTimeout(function(){window.location.reload(true);},100);
 	};
 	
 	$(document).ready(function(){
+		console.debug(`Document is ready. Loading...`);
+
 		// Browser support messages. (You might need Chrome 33.0 Beta)
 		if (!('speechSynthesis' in window)) {
+			console.debug(`SpeechSynthesis not found`);
 			alert("You don't have speechSynthesis");
 		}
 
