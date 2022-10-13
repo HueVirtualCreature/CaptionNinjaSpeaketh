@@ -109,18 +109,17 @@
 	
 	<script>
 	const VOICE_STORE = [];
-	var SPEECHSYNTH = null;
+	window.speechSynthesis.addEventListener("voiceschanged", () => {
+		loadVoiceOptionsSelect();
+	});
 
 	function loadVoiceOptionsSelect() {
 		let voices = getVoiceOptionsFromSpeechWebKit();
-
-		// let voiceSelect = $("#voiceOptions");
 
 		voices.forEach(v => {
 			let options = document.getElementById("voiceSelect");
 			VOICE_STORE.push(v);
 			let voiceName = v.name;
-			// voiceSelect.append($('<option></option>').addClass("item").attr("value", voiceName).html(voiceName));
 
 			let newOption = document.createElement("option");
 			newOption.setAttribute("value", voiceName);
@@ -140,10 +139,6 @@
 		return VOICE_STORE.find(v => v.name.toLowerCase() === selectedVoiceName.toLowerCase()) || VOICE_STORE[0];
 	}
 
-	function setUpVolumeRange() {
-
-	}
-
 	function getVolume() {
 		return $("#volumeRange").val() || 0.5;
 	}
@@ -159,7 +154,6 @@
 	//Audio Devices
 	(async () => {   
 		let devices = await navigator.mediaDevices.enumerateDevices()  
-		// await navigator.permissions.request( { name: "camera" } ); 
 		let options = document.getElementById("audioOutSelect");
 		// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
 		devices.forEach(device => {
@@ -188,8 +182,6 @@
 				}
 			};
 		};
-
-		SPEECHSYNTH = window.speechSynthesis;
 	})(window);
 
 	var urlParams = new URLSearchParams(window.location.search);
@@ -274,7 +266,7 @@
 				utterThis.pitch = getPitch();
 				utterThis.rate = getRate();
 				utterThis.volume = getVolume();
-				SPEECHSYNTH.speak(utterThis);
+				window.speechSynthesis.speak(utterThis);
 
 				if (clearOnNew) { document.getElementById("output").innerHTML = label+"<span>"+sanitize(data.final)+"</span><br/>"; } 
 				else { document.getElementById("output").innerHTML += label+"<span>"+sanitize(data.final)+"</span><br/>"; } 
@@ -297,7 +289,14 @@
 		setTimeout(function(){window.location.reload(true);},100);
 	};
 	
-	loadVoiceOptionsSelect();
+	$(document).ready(function(){
+		// Browser support messages. (You might need Chrome 33.0 Beta)
+		if (!('speechSynthesis' in window)) {
+			alert("You don't have speechSynthesis");
+		}
+
+		loadVoiceOptionsSelect();
+	});
 
 	</script>
 	</body>
