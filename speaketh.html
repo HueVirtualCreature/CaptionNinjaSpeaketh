@@ -157,20 +157,20 @@
 	}
 
 	//Audio Devices
-	// (async () => {   
-	// 	let devices = await navigator.mediaDevices.enumerateDevices()  
-	// 	// await navigator.permissions.request( { name: "camera" } ); 
-	// 	let options = document.getElementById("audioOutSelect");
-	// 	// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
-	// 	devices.forEach(device => {
-	// 		if (device.kind === "audiooutput") {
-	// 			let newOption = document.createElement("option");
-	// 			newOption.setAttribute("value", device.deviceId);
-	// 			newOption.innerHTML = device.label;
-	// 			options.appendChild(newOption);
-	// 		}
-	// 	}) 
-	// })();
+	(async () => {   
+		let devices = await navigator.mediaDevices.enumerateDevices()  
+		// await navigator.permissions.request( { name: "camera" } ); 
+		let options = document.getElementById("audioOutSelect");
+		// let devices = await navigator.mediaDevices.getUserMedia({audio: true, video: true});
+		devices.forEach(device => {
+			if (device.kind === "audiooutput") {
+				let newOption = document.createElement("option");
+				newOption.setAttribute("value", device.deviceId);
+				newOption.innerHTML = device.label;
+				options.appendChild(newOption);
+			}
+		}) 
+	})();
 
 	//???
 	(function (w) {
