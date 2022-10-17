@@ -92,11 +92,11 @@
 					<div class="item">
 						<select class="ui dropdown" id="voiceSelect"></select>
 					</div>
-					<div class="item">
+					<!-- <div class="item">
 						<select class="ui dropdown" id="audioOutSelect">
 							<option value="default">Please Select an Audio Output Device</option>
 						</select>
-					</div>
+					</div> -->
 					<div class="item">
 						<input id="volumeRange" type="range" min="0" max="1" value="0.5" step="any"/>
 					</div>
@@ -163,32 +163,44 @@
 	*/
 
 	//Audio Devices
-	(async () => {   
-		console.debug(`Getting audio devices`);
-		let devices = await navigator.mediaDevices.enumerateDevices()  
-		console.debug(`Found ${devices.length} audio device(s)`);
+	// (async () => {   
+	// 	console.debug(`Getting audio devices`);
+	// 	let devices = await navigator.mediaDevices.enumerateDevices()  
+	// 	console.debug(`Found ${devices.length} audio device(s)`);
 
-		if (!devices || devices.length < 1) {
-			console.debug(`No audio devices found. Trying something else`);
-			navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(stream => { stream.getTracks().forEach(t=>t.stop()); debugger;});
-		}
+	// 	if (!devices || !devices.some(device => device.kind === "audiooutput")) {
+	// 		console.debug(`No audio devices found. Trying something else`);
+	// 		// navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+	// 		// .then(stream => { 
+	// 		// 	stream.getTracks().forEach(t=> {debugger;}); 
+				
+	// 		// });
 
-		if (devices && devices.length > 0) {
-			loadAudioDevicesIntoSelect(devices);
-		}
-	})();
+	// 		// navigator.mediaDevices.selectAudioOutput()
+	// 		// .then((device) => {
+	// 		// 	debugger;
+	// 		// 	console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`);
+	// 		// })
+	// 		// .catch((err) => {
+	// 		// 	console.error(`${err.name}: ${err.message}`);
+	// 		// });
+	// 	}
+
+	// 	if (devices && devices.length > 0) {
+	// 		loadAudioDevicesIntoSelect(devices);
+	// 	}
+	// })();
 
 	function loadAudioDevicesIntoSelect(devices) {
 		console.debug(`Loading ${devices.length} option(s) into audio select`);
 
-		let options = document.getElementById("audioOutSelect");
 		devices.forEach(device => {
-			if (device.kind === "audiooutput") {
-				let newOption = document.createElement("option");
-				newOption.setAttribute("value", device.deviceId);
-				newOption.innerHTML = device.label;
-				options.appendChild(newOption);
-			}
+			if (device.kind !== "audiooutput") return;
+			let options = document.getElementById("audioOutSelect");
+			let newOption = document.createElement("option");
+			newOption.setAttribute("value", device.deviceId);
+			newOption.innerHTML = device.label;
+			options.appendChild(newOption);
 		});
 	};
 
