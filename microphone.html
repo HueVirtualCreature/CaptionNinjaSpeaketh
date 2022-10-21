@@ -90,6 +90,7 @@
 					</h1>
 					<div class="right menu" translate="no">
 						<div class="ui right aligned">
+							<button class="ui button" translate="no" onclick="getSpeakethLink()">Copy Speaketh Output</button>
 							<button class="ui button" translate="no" onclick="getOverlayLink()">Copy Overlay Link</button>
 						</div>
 					</div>
@@ -184,13 +185,13 @@
 			try {
 				if (final_transcript!=""){
 					socket.send(JSON.stringify({"msg":true, "final":final_transcript, "id":0}));
+					document.getElementById("output").innerHTML = final_transcript;
+					document.getElementById("userinput").value = "";
+					last_manual_entry = final_transcript;
 				}
 			} catch(e){
 				final_transcript="";
 			}
-			document.getElementById("output").innerHTML = final_transcript;
-			document.getElementById("userinput").value = "";
-			last_manual_entry = final_transcript;
 		}
 	
 		function updateURL(param, force = false) {
@@ -221,9 +222,13 @@
 			}
 		}
 
+		function getSpeakethLink() {
+			navigator.clipboard.writeText("https://huevirtualcreature.github.io/CaptionNinjaSpeaketh" + "/speaketh?room=" + roomID).then(() => { speechStatusUpdate("Speaketh link copied to clipboard", STATUS_ICONS.COMPLETE); }, () => { });
+		}
+
 		function getOverlayLink() {
 			navigator.clipboard.writeText("https://caption.ninja" + "/overlay?room=" + roomID).then(() => { speechStatusUpdate("Overlay link copied to clipboard", STATUS_ICONS.COMPLETE); }, () => { });
-		 }
+		}
 
 		//Polyfill URLSearchParams?
 		(function (w) {
