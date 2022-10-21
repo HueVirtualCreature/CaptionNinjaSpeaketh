@@ -1,0 +1,416 @@
+<html>
+<head>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,300" rel="stylesheet" type="text/css">
+	<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script> 
+
+	<link rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css">
+	<script
+		src="https://code.jquery.com/jquery-3.1.1.min.js"
+		integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+		crossorigin="anonymous"></script>
+	<script src="semantic/dist/semantic.min.js"></script>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+	<meta content="utf-8" http-equiv="encoding" />
+	<meta name="copyright" content="&copy; 2022 Hue_vCreature" />
+	<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon" />
+
+	<!-- Primary Meta Tags -->
+	<title>Caption.Ninja: Speaketh</title>
+	<meta name="title" content="Caption.Ninja: Speaketh" />
+	<meta name="description"
+		content="A captioning service developed by Hue_vCreature, which is derived from Steve Seguin's CAPTION.Ninja" />
+	<meta name="author" content="Hue_vCreature" />
+
+	<style>
+		.noselect {
+			-webkit-touch-callout: none; /* iOS Safari */
+			-webkit-user-select: none; /* Safari */
+			-khtml-user-select: none; /* Konqueror HTML */
+			-moz-user-select: none; /* Old versions of Firefox */
+			-ms-user-select: none; /* Internet Explorer/Edge */
+			user-select: none; /* Non-prefixed version, currently
+								supported by Chrome, Edge, Opera and Firefox */
+		}
+
+		body {
+			overflow: hidden;
+			font-family: "Open Sans", sans-serif;
+		}
+
+		.output {
+			margin: 0;
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 1.5em;
+			padding: 0.1em;
+			border: lightgray 2px solid;
+			height: 300px;
+			overflow-y: auto;
+			overflow-x: hidden;
+			overflow-wrap: anywhere;
+		}
+
+		/* .ui.fluid.card {
+			height: 100%;
+		} */
+
+		input#userinput
+		{
+			/* width: -webkit-fill-available; */
+			width: 100%;
+		}
+
+		/* Hide Google Translate Tooltips */
+		.goog-tooltip {
+			display: none !important;
+		}
+		.goog-tooltip:hover {
+			display: none !important;
+		}
+		.goog-text-highlight {
+			background-color: transparent !important;
+			border: none !important; 
+			box-shadow: none !important;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="ui fluid container grid stackable noselect">
+		<div class="row" translate="no" >
+			<div class="sixteen wide column">
+				<div class="ui top attached menu">
+					<h1 class="ui header">
+						<i class="microphone icon"></i>
+						<div class="content">
+							STTTSNCNV
+							<div class="sub header">Speech to Text to Speech And Chat and Voice - By HueVirtualCreature</div>
+						</div>
+					</h1>
+					<div class="right menu" translate="no">
+						<div class="ui right aligned">
+							<button class="ui button" translate="no" onclick="getOverlayLink()">Copy Overlay Link</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="sixteen wide column"  translate="no">
+				<div class="ui fluid card">
+					<div class="content">
+						<div class="header">Transcription</div>
+					</div>
+					<div class="content">
+						<div id="output" translate="no" class="output">
+							<p>Transcribed speech automatically populates this panel.</p>
+							<p>Microphone permissions are required.</p>
+						</div>
+					</div>
+					<div class="extra content" style="height: 104px;">
+						<button class="ui icon circular button negative" id="microphonebutton" onclick="microphonebutton_onclick()">
+							<i class="microphone icon"></i>
+							Start/Pause Speech Recognition
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row" translate="no" >
+			<div class="sixteen wide column">
+				<div class="ui labeled input fluid">
+					<div class="ui label action blue">
+						Manual Input
+					</div>
+					<input type="text" id="userinput" placeholder="Manually insert a message. You can also press [up] to get the last sent message.">
+					<button class="ui button blue" onclick="manualEntry()">Send</button>
+				</div>
+			</div>
+		</div>
+		<div class="ui divider"></div>
+		<div translate="no" class="row">
+			<div class="eight wide column">
+				<div class="ui icon message">
+					<i id="status-icon" class="notched circle loading icon"></i>
+					<div class="content">
+					  <p id="status-message">Initializing</p>
+					</div>
+				  </div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		//Global Scope
+		const STATUS_ICONS = {
+			LOADING: "orange notched circle loading icon",
+			AUDIOOUT: "green volume up icon",
+			AUDIOIN: "blue microphone icon",
+			AUDIOINDISABLE: "red microphone slash icon",
+			SEND: "blue cloud upload icon",
+			RECIEVE: "green cloud download icon",
+			ERROR: "red close icon",
+			SETTING: "green cog icon",
+			COMPLETE: "green check circle outline icon"
+		};
+		const WEBSOCKET_STATES = {
+			CONNECTING: 0,
+			OPEN: 1,
+			CLOSING: 2,
+			CLOSED: 3
+		};
+	
+		var broadcaster_id = null;
+		var last_manual_entry = "";
+		var recognition = null;
+		var pauseSpeech = false;
+		var roomID = "test";
+		var apiKey = false;
+		var socket = new WebSocket("wss://api.caption.ninja:443");
+		var label = false;
+		var counter = 0;
+		var myLang = "en-US";
+		var final_transcript = '';
+		//Global Scope
+
+		function speechStatusUpdate(text, icon = STATUS_ICONS.LOADING) {
+			document.getElementById("status-icon").classList = icon;
+			document.getElementById("status-message").innerHTML = text + " - " + (new Date().toLocaleTimeString());
+		}
+
+		function manualEntry(){
+			final_transcript = document.getElementById("userinput").value;
+			try {
+				if (final_transcript!=""){
+					socket.send(JSON.stringify({"msg":true, "final":final_transcript, "id":0}));
+				}
+			} catch(e){
+				final_transcript="";
+			}
+			document.getElementById("output").innerHTML = final_transcript;
+			document.getElementById("userinput").value = "";
+			last_manual_entry = final_transcript;
+		}
+	
+		function updateURL(param, force = false) {
+			var para = param.split('=');
+			if (!(urlParams.has(para[0].toLowerCase()))) {
+				if (history.pushState) {
+
+					var arr = window.location.href.split('?');
+					var newurl;
+					if (arr.length > 1 && arr[1] !== '') {
+						newurl = window.location.href + '&' + param;
+					} else {
+						newurl = window.location.href + '?' + param;
+					}
+					window.history.pushState({ path: newurl }, '', newurl);
+				}
+			} else if (force) {
+				if (history.pushState) {
+					var href = new URL(window.location.href);
+					if (para.length == 1) {
+						href.searchParams.set(para[0].toLowerCase(), "");
+					} else {
+						href.searchParams.set(para[0].toLowerCase(), para[1]);
+					}
+					log(href.toString());
+					window.history.pushState({ path: href.toString() }, '', href.toString());
+				}
+			}
+		}
+
+		function getOverlayLink() {
+			navigator.clipboard.writeText("https://caption.ninja" + "/overlay?room=" + roomID).then(() => { speechStatusUpdate("Overlay link copied to clipboard", STATUS_ICONS.COMPLETE); }, () => { });
+		 }
+
+		//Polyfill URLSearchParams?
+		(function (w) {
+			w.URLSearchParams = w.URLSearchParams || function (searchString) {
+				var self = this;
+				self.searchString = searchString;
+				self.get = function (name) {
+					var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(self.searchString);
+					if (results == null) {
+						return null;
+					}
+					else {
+						return decodeURI(results[1]) || 0;
+					}
+				};
+			};
+
+		})(window);
+
+		var urlParams = new URLSearchParams(window.location.search);
+
+		var sanitize = function (string) {
+			var temp = document.createElement('div');
+			temp.innerText = string;
+			temp.innerText = temp.innerHTML;
+			temp = temp.textContent || temp.innerText || "";
+			temp = temp.substring(0, Math.min(temp.length, 500));
+			return temp.trim();
+		};
+
+		function generateStreamID() {
+			var text = "";
+			var possible = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+			for (var i = 0; i < 7; i++) {
+				text += possible.charAt(Math.floor(Math.random() * possible.length));
+			}
+			return text;
+		};
+		
+		function setupSocketConnectionWithAPI() {
+			speechStatusUpdate("Setting up connection with the server", STATUS_ICONS.SEND);
+
+			//Get the RoomID by parsing URL
+			if (urlParams.has("room")) {
+				roomID = urlParams.get("room");
+			} else if (urlParams.has("ROOM")) {
+				roomID = urlParams.get("ROOM");
+			} else {
+				roomID = generateStreamID();
+				updateURL("room=" + roomID);
+			}
+
+			if (urlParams.has("label")) {
+				label = urlParams.get("label");
+				//label = sanitize(label);
+			}
+			
+			if (urlParams.has("lang")) {
+				myLang = urlParams.get("lang");
+			} else {
+				updateURL("lang=" + myLang);
+			}
+
+			var url = document.URL.substr(0, document.URL.lastIndexOf('/'));
+
+			//Setup Socket to Communicate with Caption Ninja
+
+			if (urlParams.has("pie")) {
+				// get an API key from https://www.piesocket.com/ for a free API server of your own (pie no longer is free? sorry)
+				var apiKey = urlParams.get("pie") || "0khtlN7R7ISHZzFiyfK49Q9zAm93Wti5xpbW9qjg"; 
+				socket = new WebSocket("wss://free3.piesocket.com/v3/" + roomID + "?api_key=" + apiKey);
+			}
+
+			socket.onclose = function () {
+				speechStatusUpdate("Connection to server lost", STATUS_ICONS.CLOSED);
+				setTimeout(function () { window.location.reload(true); }, 100);
+			};
+
+			socket.onopen = function () {
+				speechStatusUpdate("Connection to server established", STATUS_ICONS.COMPLETE);
+				socket.send(JSON.stringify({ "join": roomID }));
+			}
+		}
+
+		function setupWebkitSpeechRecognition() {
+			if ('webkitSpeechRecognition' in window) {
+				recognition = new webkitSpeechRecognition();
+				speechStatusUpdate("Attempting to start webkitSpeechRecognition", STATUS_ICONS.LOADING);
+				if (myLang) {
+					recognition.lang = myLang;
+				}
+				recognition.continuous = false;
+				recognition.interimResults = false;
+
+				recognition.onstart = function () {
+					speechStatusUpdate("WebSpeechRecognition has started", STATUS_ICONS.AUDIOIN);
+				};
+				recognition.onspeechstart = function () {
+					speechStatusUpdate("WebSpeechRecognition is listening", STATUS_ICONS.AUDIOIN);
+				};
+				recognition.onspeechend = function () {
+					speechStatusUpdate("WebSpeechRecognition is processing", STATUS_ICONS.LOADING);
+				};
+				recognition.onerror = function (event) {
+					console.debug("WebSpeechRecognition encountered an error", event);
+					speechStatusUpdate("WebSpeechRecognition encountered an error. Developer's console contains more information.", STATUS_ICONS.ERROR);
+				};
+				recognition.onend = function (event) {
+					console.debug("WebSpeechRecognition has stopped", event);
+					speechStatusUpdate("WebSpeechRecognition has stopped.", STATUS_ICONS.AUDIOINDISABLE);
+					if (!pauseSpeech) setupWebkitSpeechRecognition();
+				};
+				recognition.onresult = function (event) {
+					speechStatusUpdate("WebSpeechRecognition processed a result", STATUS_ICONS.RECIEVE);
+					counter += 1;
+					if (!event.results) {
+						speechStatusUpdate("WebSpeechRecognition received an empty result", STATUS_ICONS.ERROR);
+						return;
+					}
+
+					for (var i = event.resultIndex; i < event.results.length; ++i) {
+						if (event.results[i].isFinal) {
+							final_transcript += sanitize(event.results[i][0].transcript);
+						}
+					}
+
+					if (final_transcript) {
+						speechStatusUpdate("WebSpeechRecognition processed a transcription", STATUS_ICONS.COMPLETE);
+						console.debug("WebSpeechRecognition processed a transcription: ", final_transcript);
+
+						document.getElementById("output").innerHTML = "<span id='final_" + counter + "'>" + final_transcript + "</span><br />";
+
+						sendMessageToCaptionNinja();
+					} 
+				};
+				recognition.start();
+				return;
+			}
+
+			alert("webkitSpeechRecognition not found. Cannot start. (Are you not using Chrome?)");
+		}
+
+		function sendMessageToCaptionNinja(){
+			try {
+				speechStatusUpdate("Sending message to the server", STATUS_ICONS.SEND);
+				if (label) {
+					socket.send(JSON.stringify({ "msg": true, "final": final_transcript, "id": counter, "label": label }));
+				} 
+				if (!label) {
+					socket.send(JSON.stringify({ "msg": true, "final": final_transcript, "id": counter }));
+				}
+				final_transcript = "";
+			} catch (ex) {
+				console.error("Encountered an error with sending message to the server.", ex);
+				speechStatusUpdate("Encountered an error with sending message to the server. Developer's console contains more information.", STATUS_ICONS.ERROR);
+			}
+		}
+
+		function microphonebutton_onclick() { 
+			//Determine state of button
+			let button = document.getElementById("microphonebutton");
+			if (button.classList.value.includes("negative")) {
+				button.classList = button.classList.value.replace("negative", "positive");
+				forceStopSpeechRecognition();
+				return;
+			} 
+			if (button.classList.value.includes("positive")) {
+				button.classList = button.classList.value.replace("positive", "negative");
+				forceStartSpeechRecognition();
+				return;
+			} 
+		}
+
+		function forceStartSpeechRecognition() { pauseSpeech = false; recognition.start(); }
+
+		function forceStopSpeechRecognition() { pauseSpeech = true; recognition.stop(); }
+
+		//Run Immediately
+		setupSocketConnectionWithAPI();
+
+		document.getElementById("userinput").addEventListener("keyup", function(event) { 
+			if (event.keyCode === 13) { manualEntry(); } 
+			if (event.keyCode === 38) { document.getElementById("userinput").value = last_manual_entry; } 
+		});
+
+		setupWebkitSpeechRecognition();
+	</script>
+</body>
+
+</html>
